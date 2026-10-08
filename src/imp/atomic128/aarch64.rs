@@ -77,10 +77,12 @@ Refs:
 See tests/asm-test/asm/portable-atomic for generated assembly.
 */
 
-include!("macros.rs");
-
 // On musl with static linking, it seems that getauxval is not always available.
 // See detect/auxv.rs for more.
+#[cfg(not(portable_atomic_no_asm))]
+use core::arch::asm;
+use core::sync::atomic::Ordering;
+
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(
     test,
@@ -103,8 +105,7 @@ include!("macros.rs");
     target_os = "android",
     target_os = "freebsd",
 ))]
-#[path = "../detect/auxv.rs"]
-mod detect;
+use crate::imp::detect;
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(
     test,
@@ -114,8 +115,7 @@ mod detect;
     )),
 ))]
 #[cfg(any(target_os = "netbsd", target_os = "openbsd"))]
-#[path = "../detect/aarch64_aa64reg.rs"]
-mod detect;
+use crate::imp::detect;
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(test, portable_atomic_outline_atomics))] // TODO(aarch64-illumos): currently disabled by default
 #[cfg(any(
@@ -126,40 +126,28 @@ mod detect;
     )),
 ))]
 #[cfg(target_os = "illumos")]
-#[path = "../detect/aarch64_illumos.rs"]
-mod detect;
+use crate::imp::detect;
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(test, not(any(target_feature = "lse", portable_atomic_target_feature = "lse"))))]
 #[cfg(target_os = "fuchsia")]
-#[path = "../detect/aarch64_fuchsia.rs"]
-mod detect;
+use crate::imp::detect;
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(test, not(any(target_feature = "lse", portable_atomic_target_feature = "lse"))))]
 #[cfg(windows)]
-#[path = "../detect/aarch64_windows.rs"]
-mod detect;
-
+use crate::imp::detect;
 #[cfg(test)] // test-only (we use auxv.rs)
 #[cfg(not(valgrind))]
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd"))]
-#[path = "../detect/aarch64_aa64reg.rs"]
-mod test_detect_aa64reg;
+use crate::imp::detect::aarch64_aa64reg as test_detect_aa64reg;
 #[cfg(test)] // test-only (unused)
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(target_vendor = "apple")]
-#[path = "../detect/aarch64_apple.rs"]
-mod test_detect_apple;
+use crate::imp::detect::aarch64_apple as test_detect_apple;
 #[cfg(test)] // test-only (we use aarch64_aa64reg.rs)
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(target_os = "openbsd")]
-#[path = "../detect/auxv.rs"]
-mod test_detect_auxv;
-
-#[cfg(not(portable_atomic_no_asm))]
-use core::arch::asm;
-use core::sync::atomic::Ordering;
-
+use crate::imp::detect::auxv as test_detect_auxv;
 use crate::utils::{Pair, U128};
 
 #[cfg(any(

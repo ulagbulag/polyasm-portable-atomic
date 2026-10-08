@@ -39,7 +39,14 @@ On Linux/Android/FreeBSD, we use auxv.rs and this module is test-only because:
   FreeBSD 12.{2,3,4}), and we got SIGILL (worked on FreeBSD 13 and 14).
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 #[cfg_attr(test, derive(Debug, PartialEq))]
 struct AA64Reg {

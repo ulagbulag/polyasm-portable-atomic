@@ -13,7 +13,14 @@ Adapted from https://github.com/rust-lang/rust/blob/1.92.0/library/std_detect/sr
 #[cfg(any(target_env = "sgx", miri))]
 compile_error!("internal error: this module is not supported on this environment");
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache, test};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 #[cfg(not(portable_atomic_no_asm))]
 use core::arch::asm;

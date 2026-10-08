@@ -11,7 +11,14 @@ Refs:
 - https://github.com/llvm/llvm-project/commit/4e731abc55681751b5d736b613f7720e50eb1ad4
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 #[allow(non_camel_case_types)]
 mod ffi {

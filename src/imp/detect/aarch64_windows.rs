@@ -9,7 +9,14 @@ https://github.com/rust-lang/stdarch/pull/1373
 Refs: https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-isprocessorfeaturepresent
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 // windows-sys requires Rust 1.71
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]

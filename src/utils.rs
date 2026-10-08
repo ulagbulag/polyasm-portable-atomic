@@ -5,7 +5,6 @@
 #[allow(unused_imports)]
 pub(crate) use self::generated::{RegISize, RegSize};
 #[macro_use]
-#[path = "gen/utils.rs"]
 mod generated;
 
 use core::sync::atomic::Ordering;
@@ -145,7 +144,8 @@ macro_rules! impl_debug_and_serde {
         #[cfg(feature = "serde")]
         #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
         impl serde::ser::Serialize for $atomic_type {
-            #[allow(clippy::missing_inline_in_public_items)] // serde doesn't use inline on std atomic's Serialize/Deserialize impl
+            #[allow(clippy::missing_inline_in_public_items)] // serde doesn't use inline on std atomic's Serialize/Deserialize
+            // impl
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
                 S: serde::ser::Serializer,
@@ -157,7 +157,8 @@ macro_rules! impl_debug_and_serde {
         #[cfg(feature = "serde")]
         #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
         impl<'de> serde::de::Deserialize<'de> for $atomic_type {
-            #[allow(clippy::missing_inline_in_public_items)] // serde doesn't use inline on std atomic's Serialize/Deserialize impl
+            #[allow(clippy::missing_inline_in_public_items)] // serde doesn't use inline on std atomic's Serialize/Deserialize
+            // impl
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where
                 D: serde::de::Deserializer<'de>,
@@ -379,7 +380,9 @@ pub(crate) fn assert_load_ordering(order: Ordering) {
     match order {
         Ordering::Acquire | Ordering::Relaxed | Ordering::SeqCst => {}
         Ordering::Release => panic!("there is no such thing as a release load"),
-        Ordering::AcqRel => panic!("there is no such thing as an acquire-release load"),
+        Ordering::AcqRel => {
+            panic!("there is no such thing as an acquire-release load")
+        }
         _ => unreachable!(),
     }
 }
@@ -389,8 +392,12 @@ pub(crate) fn assert_load_ordering(order: Ordering) {
 pub(crate) fn assert_store_ordering(order: Ordering) {
     match order {
         Ordering::Release | Ordering::Relaxed | Ordering::SeqCst => {}
-        Ordering::Acquire => panic!("there is no such thing as an acquire store"),
-        Ordering::AcqRel => panic!("there is no such thing as an acquire-release store"),
+        Ordering::Acquire => {
+            panic!("there is no such thing as an acquire store")
+        }
+        Ordering::AcqRel => {
+            panic!("there is no such thing as an acquire-release store")
+        }
         _ => unreachable!(),
     }
 }
@@ -408,7 +415,9 @@ pub(crate) fn assert_compare_exchange_ordering(success: Ordering, failure: Order
     }
     match failure {
         Ordering::Acquire | Ordering::Relaxed | Ordering::SeqCst => {}
-        Ordering::Release => panic!("there is no such thing as a release failure ordering"),
+        Ordering::Release => {
+            panic!("there is no such thing as a release failure ordering")
+        }
         Ordering::AcqRel => panic!("there is no such thing as an acquire-release failure ordering"),
         _ => unreachable!(),
     }
@@ -428,16 +437,16 @@ pub(crate) fn upgrade_success_ordering(success: Ordering, failure: Ordering) -> 
 }
 
 #[cfg(not(portable_atomic_no_asm_maybe_uninit))]
-#[cfg(target_pointer_width = "32")]
+#[cfg(all(not(target_abi = "polyasm"), target_pointer_width = "32"))]
 // SAFETY: MaybeUninit returned by zero_extend64_ptr is always initialized.
 const _: () = assert!(unsafe {
     zero_extend64_ptr(ptr::without_provenance_mut(!0)).assume_init() == !0_u32 as u64
 });
 /// Zero-extends the given 32-bit pointer to `MaybeUninit<u64>`.
 /// This is used for 64-bit architecture's 32-bit ABI (e.g., AArch64 ILP32 ABI).
-/// See ptr_reg! macro in src/gen/utils.rs for details.
+/// See ptr_reg! macro in src/utils/generated.rs for details.
 #[cfg(not(portable_atomic_no_asm_maybe_uninit))]
-#[cfg(target_pointer_width = "32")]
+#[cfg(all(not(target_abi = "polyasm"), target_pointer_width = "32"))]
 #[allow(dead_code)]
 #[inline]
 pub(crate) const fn zero_extend64_ptr(v: *mut ()) -> core::mem::MaybeUninit<u64> {
@@ -759,7 +768,8 @@ pub(crate) mod ffi {
         #[inline]
         #[must_use]
         pub(crate) fn to_bytes_with_nul(&self) -> &[u8] {
-            #[allow(clippy::unnecessary_cast)] // triggered for targets that c_char is u8
+            #[allow(clippy::unnecessary_cast)]
+            // triggered for targets that c_char is u8
             // SAFETY: Transmuting a slice of `c_char`s to a slice of `u8`s
             // is safe on all supported targets.
             unsafe {
