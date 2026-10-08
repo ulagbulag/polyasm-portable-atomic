@@ -20,11 +20,9 @@ See tests/asm-test/asm/portable-atomic for generated assembly.
 
 // TODO: use core::arch::x86_64::cmpxchg16b where available and efficient than asm
 
-include!("macros.rs");
-
-#[cfg(not(any(target_feature = "cmpxchg16b", portable_atomic_target_feature = "cmpxchg16b")))]
-#[path = "../fallback/outline_atomics.rs"]
-mod fallback;
+#[cfg(not(portable_atomic_no_asm))]
+use core::arch::asm;
+use core::sync::atomic::Ordering;
 
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(not(target_env = "sgx"))]
@@ -39,13 +37,12 @@ mod fallback;
         target_feature = "avx",
     )),
 ))]
-#[path = "../detect/x86_64.rs"]
-mod detect;
-
-#[cfg(not(portable_atomic_no_asm))]
-use core::arch::asm;
-use core::sync::atomic::Ordering;
-
+use crate::imp::detect;
+#[cfg(not(any(
+    target_feature = "cmpxchg16b",
+    portable_atomic_target_feature = "cmpxchg16b"
+)))]
+use crate::imp::fallback::outline_atomics as fallback;
 use crate::utils::{Pair, U128};
 
 // Asserts that the function is called in the correct context.

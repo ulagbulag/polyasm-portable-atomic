@@ -1,1 +1,1 @@
-../version.rs
+../version/mod.rs

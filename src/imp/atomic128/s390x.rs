@@ -29,8 +29,6 @@ Refs:
 See tests/asm-test/asm/portable-atomic for generated assembly.
 */
 
-include!("macros.rs");
-
 use core::{arch::asm, sync::atomic::Ordering};
 
 use crate::utils::{Pair, U128};

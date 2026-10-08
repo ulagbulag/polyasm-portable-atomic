@@ -13,7 +13,14 @@ Run-time detection on PowerPC64 AIX is currently disabled by default as experime
 because we cannot run tests on the VM or real machine.
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 // libc requires Rust 1.63
 mod ffi {

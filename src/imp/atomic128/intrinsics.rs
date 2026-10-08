@@ -30,22 +30,16 @@ Note:
   future, it should probably be controlled by another ABI feature similar to forced-atomics.)
 */
 
-include!("macros.rs");
-
-#[allow(dead_code)] // we only use compare_exchange.
-#[cfg(target_arch = "x86_64")]
-#[cfg(not(target_feature = "cmpxchg16b"))]
-#[path = "../fallback/outline_atomics.rs"]
-mod fallback;
-
-#[cfg(target_arch = "x86_64")]
-#[cfg(not(target_feature = "cmpxchg16b"))]
-#[path = "../detect/x86_64.rs"]
-mod detect;
-
 #[cfg(not(target_arch = "x86_64"))]
 use core::intrinsics;
 use core::sync::atomic::Ordering::{self, AcqRel, Acquire, Relaxed, Release, SeqCst};
+
+#[cfg(target_arch = "x86_64")]
+#[cfg(not(target_feature = "cmpxchg16b"))]
+use crate::imp::detect;
+#[cfg(target_arch = "x86_64")]
+#[cfg(not(target_feature = "cmpxchg16b"))]
+use crate::imp::fallback::outline_atomics as fallback;
 
 #[cfg(target_arch = "x86_64")]
 #[inline]

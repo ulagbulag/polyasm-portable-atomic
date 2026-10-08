@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+use core::sync::atomic::{AtomicU32, Ordering};
+
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub(crate) struct CpuInfo(u32);
 
 impl CpuInfo {
     #[inline]
-    fn set(&mut self, bit: CpuInfoFlag) {
+    pub(crate) fn set(&mut self, bit: CpuInfoFlag) {
         self.0 = set(self.0, bit as u32);
     }
     #[inline]
@@ -23,27 +25,31 @@ fn set(x: u32, bit: u32) -> u32 {
 }
 #[inline]
 #[must_use]
-fn test(x: u32, bit: u32) -> bool {
+pub(crate) fn test(x: u32, bit: u32) -> bool {
     x & (1 << bit) != 0
 }
 
-#[inline]
-pub(crate) fn detect() -> CpuInfo {
-    use core::sync::atomic::{AtomicU32, Ordering};
+pub(crate) struct DetectCache(AtomicU32);
 
-    static CACHE: AtomicU32 = AtomicU32::new(0);
-    let mut info = CpuInfo(CACHE.load(Ordering::Relaxed));
-    if info.0 != 0 {
-        return info;
+impl DetectCache {
+    pub(crate) const fn new() -> Self {
+        Self(AtomicU32::new(0))
     }
-    info.set(CpuInfoFlag::Init);
-    // Note: detect_false cfg is intended to make it easy for developers to test
-    // cases where features usually available is not available, and is not a public API.
-    if !cfg!(portable_atomic_test_detect_false) {
-        _detect(&mut info);
+
+    #[inline]
+    pub(crate) fn detect(&self, detect: fn(&mut CpuInfo)) -> CpuInfo {
+        let mut info = CpuInfo(self.0.load(Ordering::Relaxed));
+        if info.0 != 0 {
+            return info;
+        }
+        info.set(CpuInfoFlag::Init);
+        // This cfg lets developers run with normally available features treated as absent.
+        if !cfg!(portable_atomic_test_detect_false) {
+            detect(&mut info);
+        }
+        self.0.store(info.0, Ordering::Relaxed);
+        info
     }
-    CACHE.store(info.0, Ordering::Relaxed);
-    info
 }
 
 macro_rules! flags {
@@ -55,7 +61,7 @@ macro_rules! flags {
         #[derive(Clone, Copy)]
         #[cfg_attr(test, derive(PartialEq, Eq, PartialOrd, Ord))]
         #[repr(u32)]
-        enum CpuInfoFlag {
+        pub(crate) enum CpuInfoFlag {
             Init = 0,
             $($func,)*
         }
@@ -81,10 +87,10 @@ macro_rules! flags {
             {
                 const _: u32 = 1_u32 << CpuInfoFlag::$func as u32;
                 assert_eq!($name.replace(|c: char| c == '-' || c == '.', "_"), stringify!($func));
-                if detect().$func() {
-                    assert!(detect().test(CpuInfoFlag::$func));
+                if super::detect().$func() {
+                    assert!(super::detect().test(CpuInfoFlag::$func));
                 } else {
-                    assert!(!detect().test(CpuInfoFlag::$func));
+                    assert!(!super::detect().test(CpuInfoFlag::$func));
                 }
             }
         )*}
@@ -246,7 +252,7 @@ mod tests_common {
         let mut features = String::new();
         features.push_str("\nfeatures:\n");
         for &(name, flag, compile_time) in CpuInfo::ALL_FLAGS {
-            let run_time = detect().test(flag);
+            let run_time = super::super::detect().test(flag);
             if run_time == compile_time {
                 let _ = writeln!(features, "  {}: {}", name, run_time);
             } else {

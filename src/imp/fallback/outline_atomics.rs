@@ -15,35 +15,35 @@ use core::sync::atomic::Ordering;
 #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "riscv64"))]
 pub(crate) type Udw = u128;
 #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "riscv64"))]
-pub(crate) type AtomicUdw = super::super::super::fallback::AtomicU128;
+pub(crate) type AtomicUdw = super::AtomicU128;
 #[cfg(any(target_arch = "x86_64", target_arch = "powerpc64", target_arch = "riscv64"))]
-pub(crate) type AtomicIdw = super::super::super::fallback::AtomicI128;
+pub(crate) type AtomicIdw = super::AtomicI128;
 
 #[cfg(any(target_arch = "arm", target_arch = "riscv32"))]
 pub(crate) type Udw = u64;
 #[cfg(any(target_arch = "arm", target_arch = "riscv32"))]
-pub(crate) type AtomicUdw = super::super::super::fallback::AtomicU64;
+pub(crate) type AtomicUdw = super::AtomicU64;
 #[cfg(any(target_arch = "arm", target_arch = "riscv32"))]
-pub(crate) type AtomicIdw = super::super::super::fallback::AtomicI64;
+pub(crate) type AtomicIdw = super::AtomicI64;
 
 // Asserts that the function is called in the correct context.
 macro_rules! debug_assert_outline_atomics {
     () => {
         #[cfg(target_arch = "x86_64")]
         {
-            debug_assert!(!super::detect::detect().cmpxchg16b());
+            debug_assert!(!crate::imp::detect::detect().cmpxchg16b());
         }
         #[cfg(target_arch = "powerpc64")]
         {
-            debug_assert!(!super::detect::detect().quadword_atomics());
+            debug_assert!(!crate::imp::detect::detect().quadword_atomics());
         }
         #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
         {
-            debug_assert!(!super::detect::detect().zacas());
+            debug_assert!(!crate::imp::detect::detect().zacas());
         }
         #[cfg(target_arch = "arm")]
         {
-            debug_assert!(!super::has_kuser_cmpxchg64());
+            debug_assert!(!crate::imp::atomic64::arm_linux::has_kuser_cmpxchg64());
         }
     };
 }

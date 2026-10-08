@@ -75,6 +75,50 @@ mod riscv;
 ))]
 mod x86;
 
+// Run-time CPU feature detection has one natural owner for every supported backend.
+#[cfg(any(
+    target_arch = "x86_64",
+    all(
+        any(target_arch = "riscv32", target_arch = "riscv64"),
+        any(target_os = "linux", target_os = "android"),
+    ),
+    all(
+        target_arch = "arm",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "openbsd",
+        ),
+    ),
+    all(
+        any(target_arch = "aarch64", target_arch = "arm64ec"),
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd",
+            target_os = "illumos",
+            target_os = "fuchsia",
+            windows,
+            target_vendor = "apple",
+        ),
+    ),
+    all(
+        target_arch = "powerpc64",
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_os = "freebsd",
+            target_os = "openbsd",
+            target_os = "aix",
+        ),
+    ),
+))]
+#[allow(dead_code, unused_imports)]
+mod detect;
+
 // 64-bit atomic implementations on 32-bit architectures
 #[cfg(any(target_arch = "arm", target_arch = "riscv32"))]
 mod atomic64;

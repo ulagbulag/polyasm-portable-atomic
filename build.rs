@@ -4,19 +4,17 @@
 
 #![allow(clippy::match_same_arms)] // https://github.com/rust-lang/rust-clippy/issues/12044
 
-#[path = "version.rs"]
 mod version;
 use self::version::{Version, rustc_version};
 
-#[path = "src/gen/build.rs"]
 mod generated;
 
 use std::{env, str};
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=src/gen/build.rs");
-    println!("cargo:rerun-if-changed=version.rs");
+    println!("cargo:rerun-if-changed=generated.rs");
+    println!("cargo:rerun-if-changed=version/mod.rs");
 
     #[cfg(feature = "unsafe-assume-single-core")]
     println!("cargo:rustc-cfg=portable_atomic_unsafe_assume_single_core");

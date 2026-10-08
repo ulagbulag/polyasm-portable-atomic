@@ -47,6 +47,18 @@ compile_error!(
     "internal error: unreachable since 128-bit target either has atomic CAS for the pointer width or does not have CAS"
 );
 
+#[cfg(any(
+    all(
+        target_arch = "arm",
+        not(any(target_feature = "v6", portable_atomic_target_feature = "v6")),
+        not(portable_atomic_no_outline_atomics)
+    ),
+    target_arch = "riscv32",
+    target_arch = "powerpc64",
+    target_arch = "riscv64",
+    target_arch = "x86_64",
+))]
+pub(crate) mod outline_atomics;
 mod utils;
 
 // Use "wide" sequence lock if the pointer width <= 32 for preventing its counter against wrap
@@ -61,8 +73,8 @@ cfg_has_fast_atomic_64! {
     type Chunk = u64;
 }
 cfg_no_fast_atomic_64! {
-    #[path = "seq_lock_wide.rs"]
-    mod seq_lock;
+    mod seq_lock_wide;
+    use self::seq_lock_wide as seq_lock;
     type AtomicChunk = core::sync::atomic::AtomicU32;
     type Chunk = u32;
 }

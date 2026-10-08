@@ -6,6 +6,10 @@
 See README.md for details.
 */
 
+#[allow(unused_macros)]
+#[macro_use]
+mod macros;
+
 // pre-v6 Arm Linux
 // Miri and Sanitizer do not support inline assembly.
 #[cfg(all(

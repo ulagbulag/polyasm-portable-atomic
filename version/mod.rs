@@ -22,7 +22,6 @@ pub(crate) fn rustc_version() -> Option<Version> {
     Version::parse(verbose_version)
 }
 
-#[cfg_attr(test, derive(Debug, PartialEq))]
 pub(crate) struct Version {
     pub(crate) minor: u32,
     pub(crate) nightly: bool,
@@ -49,11 +48,6 @@ impl Version {
         } else {
             self.minor >= minor
         }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn commit_date(&self) -> &Date {
-        &self.commit_date
     }
 
     pub(crate) fn parse(verbose_version: &str) -> Option<Self> {
@@ -120,7 +114,6 @@ impl Version {
 }
 
 #[derive(PartialEq, PartialOrd)]
-#[cfg_attr(test, derive(Debug))]
 pub(crate) struct Date {
     pub(crate) year: u16,
     pub(crate) month: u8,

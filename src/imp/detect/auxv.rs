@@ -142,7 +142,14 @@ so we use it (see aarch64_aa64reg.rs).
 
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 use self::os::ffi;
 #[cfg(any(target_os = "linux", target_os = "android"))]

@@ -24,22 +24,19 @@ Refs:
 See tests/asm-test/asm/portable-atomic for generated assembly.
 */
 
-include!("macros.rs");
-
-#[cfg(not(any(target_feature = "zacas", portable_atomic_target_feature = "zacas")))]
-#[path = "../fallback/outline_atomics.rs"]
-mod fallback;
-
-#[cfg(not(portable_atomic_no_outline_atomics))]
-#[cfg(any(test, not(any(target_feature = "zacas", portable_atomic_target_feature = "zacas"))))]
-#[cfg(any(target_os = "linux", target_os = "android"))]
-#[path = "../detect/riscv_linux.rs"]
-mod detect;
-
 #[cfg(not(portable_atomic_no_asm))]
 use core::arch::asm;
 use core::sync::atomic::Ordering;
 
+#[cfg(not(portable_atomic_no_outline_atomics))]
+#[cfg(any(
+    test,
+    not(any(target_feature = "zacas", portable_atomic_target_feature = "zacas"))
+))]
+#[cfg(any(target_os = "linux", target_os = "android"))]
+use crate::imp::detect::riscv_linux as detect;
+#[cfg(not(any(target_feature = "zacas", portable_atomic_target_feature = "zacas")))]
+use crate::imp::fallback::outline_atomics as fallback;
 use crate::utils::{Pair, U128};
 
 macro_rules! debug_assert_zacas {

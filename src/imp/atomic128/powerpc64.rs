@@ -32,14 +32,7 @@ Refs:
 See tests/asm-test/asm/portable-atomic for generated assembly.
 */
 
-include!("macros.rs");
-
-#[cfg(not(any(
-    target_feature = "quadword-atomics",
-    portable_atomic_target_feature = "quadword-atomics",
-)))]
-#[path = "../fallback/outline_atomics.rs"]
-mod fallback;
+use core::{arch::asm, sync::atomic::Ordering};
 
 // On musl with static linking, it seems that getauxval is not always available.
 // See detect/auxv.rs for more.
@@ -76,8 +69,7 @@ mod fallback;
     ),
     target_os = "openbsd",
 ))]
-#[path = "../detect/auxv.rs"]
-mod detect;
+use crate::imp::detect;
 #[cfg(not(portable_atomic_no_outline_atomics))]
 #[cfg(any(
     test,
@@ -89,11 +81,12 @@ mod detect;
 #[cfg(target_os = "aix")]
 #[cfg(not(portable_atomic_pre_llvm_20))] // SIGTRAP on LLVM 19
 #[cfg(any(test, portable_atomic_outline_atomics))] // TODO(aix): currently disabled by default
-#[path = "../detect/powerpc64_aix.rs"]
-mod detect;
-
-use core::{arch::asm, sync::atomic::Ordering};
-
+use crate::imp::detect;
+#[cfg(not(any(
+    target_feature = "quadword-atomics",
+    portable_atomic_target_feature = "quadword-atomics",
+)))]
+use crate::imp::fallback::outline_atomics as fallback;
 use crate::utils::{Pair, U128};
 
 macro_rules! debug_assert_pwr8 {

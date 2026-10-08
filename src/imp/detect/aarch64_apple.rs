@@ -31,7 +31,14 @@ TODO: non-macOS targets doesn't always supports FEAT_LSE2, but sysctl on them on
 - https://github.com/rust-lang/stdarch/pull/1636
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 use core::{mem, ptr};
 

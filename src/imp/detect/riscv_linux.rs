@@ -9,7 +9,14 @@ So, we use riscv_hwprobe that supports multi-letter extensions.
 Refs: https://github.com/torvalds/linux/blob/v6.16/Documentation/arch/riscv/hwprobe.rst
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 use core::ptr;
 

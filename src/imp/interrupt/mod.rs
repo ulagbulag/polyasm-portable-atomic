@@ -9,26 +9,40 @@ Fallback implementation based on disabling interrupts or critical-section
 See README.md of this directory for details.
 */
 
-#[cfg(not(feature = "critical-section"))]
-#[cfg_attr(
-    all(
-        target_arch = "arm",
-        any(target_feature = "mclass", portable_atomic_target_feature = "mclass"),
+// Every architecture source has one natural module owner. The cfg-selected
+// re-export preserves the single `arch` consumer path.
+macro_rules! interrupt_backends {
+    ($(($backend:ident, $condition:meta)),+ $(,)?) => {
+        $(
+            #[cfg(all(not(feature = "critical-section"), $condition))]
+            pub(super) mod $backend;
+
+            #[cfg(all(not(feature = "critical-section"), $condition))]
+            pub(super) use self::$backend as arch;
+        )+
+    };
+}
+
+interrupt_backends!(
+    (
+        armv6m,
+        all(
+            target_arch = "arm",
+            any(target_feature = "mclass", portable_atomic_target_feature = "mclass"),
+        )
     ),
-    path = "armv6m.rs"
-)]
-#[cfg_attr(
-    all(
-        target_arch = "arm",
-        not(any(target_feature = "mclass", portable_atomic_target_feature = "mclass")),
+    (
+        armv4t,
+        all(
+            target_arch = "arm",
+            not(any(target_feature = "mclass", portable_atomic_target_feature = "mclass")),
+        )
     ),
-    path = "armv4t.rs"
-)]
-#[cfg_attr(target_arch = "avr", path = "avr.rs")]
-#[cfg_attr(target_arch = "msp430", path = "msp430.rs")]
-#[cfg_attr(any(target_arch = "riscv32", target_arch = "riscv64"), path = "riscv.rs")]
-#[cfg_attr(target_arch = "xtensa", path = "xtensa.rs")]
-pub(super) mod arch;
+    (avr, target_arch = "avr"),
+    (msp430, target_arch = "msp430"),
+    (riscv, any(target_arch = "riscv32", target_arch = "riscv64")),
+    (xtensa, target_arch = "xtensa"),
+);
 
 #[cfg_attr(
     portable_atomic_no_cfg_target_has_atomic,

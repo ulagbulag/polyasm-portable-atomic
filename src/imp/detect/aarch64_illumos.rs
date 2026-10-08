@@ -10,7 +10,14 @@ Run-time detection on AArch64 illumos is currently disabled by default as experi
 because illumos AArch64 port is experimental and we cannot run tests on the VM or real machine.
 */
 
-include!("common.rs");
+use super::common::{CpuInfo, CpuInfoFlag, DetectCache};
+
+static CACHE: DetectCache = DetectCache::new();
+
+#[inline]
+pub(crate) fn detect() -> CpuInfo {
+    CACHE.detect(_detect)
+}
 
 // libc requires Rust 1.63
 mod ffi {

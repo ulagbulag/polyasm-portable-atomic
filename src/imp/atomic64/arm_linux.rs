@@ -22,10 +22,9 @@ this module and use fallback implementation instead.
 // be possible to omit the dynamic kernel version check if the std feature is enabled on Rust 1.64+.
 // https://blog.rust-lang.org/2022/08/01/Increasing-glibc-kernel-requirements
 
-include!("macros.rs");
-
-#[path = "../fallback/outline_atomics.rs"]
-mod fallback;
+#[cfg(not(portable_atomic_no_asm))]
+use core::arch::asm;
+use core::{mem, sync::atomic::Ordering};
 
 #[cfg(test)] // test-only (unused)
 #[cfg(not(portable_atomic_no_outline_atomics))]
@@ -43,14 +42,11 @@ mod fallback;
     target_os = "freebsd",
     target_os = "openbsd",
 ))]
-#[path = "../detect/auxv.rs"]
-mod test_detect_auxv;
-
-#[cfg(not(portable_atomic_no_asm))]
-use core::arch::asm;
-use core::{mem, sync::atomic::Ordering};
-
-use crate::utils::{Pair, U64};
+use crate::imp::detect::auxv as test_detect_auxv;
+use crate::{
+    imp::fallback::outline_atomics as fallback,
+    utils::{Pair, U64},
+};
 
 // https://github.com/torvalds/linux/blob/v6.16/Documentation/arch/arm/kernel_user_helpers.rst
 const KUSER_HELPER_VERSION: usize = 0xFFFF0FFC;
@@ -73,7 +69,7 @@ fn __kuser_helper_version() -> i32 {
     v
 }
 #[inline]
-fn has_kuser_cmpxchg64() -> bool {
+pub(crate) fn has_kuser_cmpxchg64() -> bool {
     // Note: detect_false cfg is intended to make it easy for developers to test
     // cases where features usually available is not available, and is not a public API.
     if cfg!(portable_atomic_test_detect_false) {
